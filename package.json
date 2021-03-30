@@ -1,0 +1,31 @@
+{
+  "name": "tokens",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "preclean": "rimraf artifacts && rimraf cache",
+    "clean": "rimraf ./shared/logs.txt && rimraf ./shared/abi",
+    "premigrate": "npm run clean",
+    "migrate": "npx hardhat run scripts/initNetwork.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "ganache-cli -e 10 -a 10 -p 8545 > ./shared/logs.txt",
+    "run-server": "concurrently \"npm run serve\" \"npm run migrate\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@symblox/hardhat-abi-gen": "^0.2.0",
+    "ganache-cli": "^6.12.2",
+    "hardhat": "^2.1.2",
+    "pm2": "^4.5.5"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^4.0.0",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.0.32"
+  }
+}
