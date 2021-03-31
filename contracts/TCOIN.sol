@@ -8,6 +8,106 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
+import {Redistributable} from './Redistributable.sol';
+
+contract TCOIN is Redistributable {
+
+    uint256 private _totalSupply = 0;
+    uint256 private _burnedSupply = 0;
+
+    uint256 private _burnedMultiplier = 100;
+    uint256 private _rediscributionMultiplier = 50;
+
+    uint256 private _teachingReward = 32 * 10 ** decimals();
+    uint256 private _initReward = 2 * 10 ** decimals();
+    uint256 private _maxSupply = 256 * 10**6 * 10**decimals();
+
+    mapping (address => mapping (address => uint256)) private _allowances;
+
+    constructor() Redistributable("TCoin", "TCOIN") {}
+
+    function earnForLearning(address mentor, address student) public payable returns (bool) {
+        require(mentor != address(0), "ERC20: mentor address cannot be 0x0");
+        require(student != address(0), "ERC20: confirmer address cannot be 0x0");
+
+        bool mentorWasRecentlyAdded = _addToOwners(mentor);
+        bool studentWasRecentlyAdded = _addToOwners(student);
+
+        if (_totalSupply + _initReward >= _maxSupply) {
+            return false;
+        }
+
+        if(mentorWasRecentlyAdded == true){
+            _mint(mentor, _initReward);
+            _totalSupply += _initReward;
+        }
+
+        if (_totalSupply + _initReward >= _maxSupply) {
+            return false;
+        }
+
+        if(studentWasRecentlyAdded == true){
+            _mint(student, _initReward);
+            _totalSupply += _initReward;
+        }
+
+        if (_totalSupply + _teachingReward >= _maxSupply) {
+            return false;
+        }
+
+        _mint(mentor, _teachingReward);
+        _totalSupply += _teachingReward;
+        return true;
+    }
+
+    function minted() public view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function burned() public view returns (uint256) {
+        return _burnedSupply;
+    }
+
+    function maxSupply() public view returns (uint256) {
+        return _maxSupply;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override(ERC20) returns (bool) {
+        uint256 toBurn = amount / _burnedMultiplier;
+        uint256 toRediscribute = amount / _rediscributionMultiplier;
+        uint256 finalAmount = amount - toBurn - toRediscribute;
+
+        _redistribure(toRediscribute);
+
+        _burn(sender, toBurn);
+        _burnedSupply += toBurn;
+
+        _approve(sender, recipient, finalAmount);
+        _transfer(sender, recipient, finalAmount);
+        _approve(sender, recipient, 0);
+
+        return true;
+    }
+
+    function transfer(address recipient, uint256 amount) public virtual override(ERC20) returns (bool) {
+        uint256 toBurn = amount / _burnedMultiplier;
+        uint256 toRediscribute = amount / _rediscributionMultiplier;
+        uint256 finalAmount = amount - toBurn - toRediscribute;
+
+        _redistribure(toRediscribute);
+
+        _burn(_msgSender(), toBurn);
+        _burnedSupply += toBurn;
+
+        _transfer(_msgSender(), recipient, finalAmount);
+
+        return true;
+    }
+ 
+}
+
+
+
 // ma maxymalny limit - 1mld
 // można go burnować -> wrzucić na portfel 0x0
 // każda zmiana robi event odbierany w społeczności Community jako automatic stacking
@@ -15,91 +115,121 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 // można wysłać jako ofertę za nauke
 // można wysłać jako płatność za rabat
 
-abstract contract ERC20Redistributable is ERC20 {
-    mapping(address => bool) _owners;
-    address[] private _addresses;
+// abstract contract ERC20Redistributable is ERC20, ERC20Burnable, Ownable {
+//     mapping(address => uint256) private _balances;
+//     mapping (address => mapping (address => uint256)) private _allowances;
+//     mapping(address => bool) _owners;
+//     address[] private _addresses;
 
-    function _getCount() internal virtual returns (uint256 count) {
-        return _addresses.length;
-    }
+//     constructor(string memory name_, string memory symbol_)
+//         ERC20(name_, symbol_)
+//     {}
 
-    function _redistributeToOwners(address _from, uint256 amount)
-        internal
-        virtual
-        returns (bool)
-    {
-        uint256 toSendForOne = amount / _getCount();
+//     function decimals() public view virtual override(ERC20) returns (uint8) {
+//         return 8;
+//     }
 
-        for (uint256 i = 0; i < _addresses.length; i++) {
-            address user = _addresses[i];
-            _transfer(_from, user, toSendForOne);
-        }
+//     function _getCount() internal virtual returns (uint256 count) {
+//         return _addresses.length;
+//     }
 
-        return true;
-    }
+//     function _redistributeToAll(address sender, uint256 amount)
+//         internal
+//         virtual
+//         returns (bool)
+//     {
+//         uint256 toSendForOne = amount / _getCount();
 
-    function _addToOwners(address newOwner) internal virtual {
-        _addresses.push(newOwner);
-        _owners[newOwner] = true;
-    }
+//         for (uint256 i = 0; i < _addresses.length; i++) {
+//             address user = _addresses[i];
+//             _transferForRedistribution(sender, user, toSendForOne);
+//         }
 
-    function _containsOwner(address newOwner) internal virtual returns (bool) {
-        return _owners[newOwner];
-    }
-}
+//         return true;
+//     }
 
-contract TCOIN is ERC20, ERC20Burnable, ERC20Redistributable {
-    uint256 private _supply = 0;
-    uint256 private _maxSupply = 256 * 10**9 * 10**9;
+//     function _transferForRedistribution(
+//         address sender,
+//         address recipient,
+//         uint256 redistributionAmount
+//     ) internal virtual {
+//         require(sender != address(0), "ERC20: transfer from the zero address");
+//         require(recipient != address(0), "ERC20: transfer to the zero address");
 
-    constructor() ERC20("TCoin", "TCOIN") {}
+//         _addToBalance(recipient, redistributionAmount);
 
-    function earnForLearning(address mentor) public payable returns (bool) {
-        uint256 amount = 32 * 10**9;
+//         emit Transfer(sender, recipient, redistributionAmount);
+//     }
 
-        if (super._containsOwner(mentor) == false) {
-            super._addToOwners(mentor);
-        }
+//     // function _transfer(
+//     //     address sender,
+//     //     address recipient,
+//     //     uint256 amount
+//     // ) internal virtual override(ERC20) {
+//     //     require(sender != address(0), "ERC20: transfer from the zero address");
+//     //     require(recipient != address(0), "ERC20: transfer to the zero address");
 
-        if (_supply + amount <= _maxSupply) {
-            _supply += amount;
-            _mint(mentor, amount);
-            return (true);
-        }
+//     //     uint256 senderBalance = _balances[sender];
 
-        amount = 0;
-        return (false);
-    }
+//     //     require(
+//     //         senderBalance >= amount,
+//     //         "ERC20: transfer amount exceeds balance"
+//     //     );
 
-    function spend(
-        address _sender,
-        address _to,
-        uint256 amount
-    ) public payable returns (bool, uint256) {
-        uint256 toBurn = amount / 10;
-        uint256 toSend = (4 * amount) / 5;
-        uint256 toRedistribute = amount / 10;
+//     //     if (_containsOwner(sender) == false) {
+//     //         _addToOwners(sender);
+//     //     }
 
-        if (super._containsOwner(_to) == false) {
-            super._addToOwners(_to);
-        }
+//     //     if (_containsOwner(recipient) == false) {
+//     //         _addToOwners(recipient);
+//     //     }
 
-        if (super._containsOwner(_sender) == false) {
-            super._addToOwners(_sender);
-        }
+//     //     // uint256 toSendForAll = amount / 20;
+//     //     uint256 toSendToBurn = amount / 20;
+//     //     uint256 toSend = amount - toSendToBurn - toSendForAll;
 
-        _burn(_sender, toBurn);
-        _transfer(_sender, _to, toSend);
-        super._redistributeToOwners(_sender, toRedistribute);
+//     //     _burn(sender, toSendToBurn);
 
-        return (true, toSend);
-    }
+//     //     _addToBalance(recipient, amount);
 
-    function minted() public view returns (uint256) {
-        return _supply;
-    }
+//     //     emit Transfer(sender, recipient, toSend);
 
-    function maxSupply() public view returns (uint256) {
-        return _maxSupply;
-    }
-}
+//     //     // _redistributeToAll(sender, toSendForAll);
+//     // }
+
+    // function _addToBalance(address recepient, uint256 amount) internal virtual {
+    //     _balances[recepient] += amount;
+    // }
+
+//     function _addToOwners(address newOwner) internal virtual {
+//         if(_containsOwner(newOwner) == false){
+//             _addresses.push(newOwner);
+//             _owners[newOwner] = true;
+//         }
+       
+//     }
+
+    
+
+//     function _containsOwner(address newOwner) internal virtual returns (bool) {
+//         return _owners[newOwner];
+//     }
+
+//     // function _beforeTokenTransfer(
+//     //     address sender,
+//     //     address recipient,
+//     //     uint256 amount
+//     // ) overwrite(ERC20) internal virtual {
+
+//     //     if(owner == address(0)){
+//     //         return false
+//     //     }
+
+//     //     if(recipient == address(0)){
+//     //         return false
+//     //     }
+//     //     // uint256 toBurn = amount / 10
+//     // }
+// }
+
+// allowance -> dajesz pozwolnie na wydanie pieniędzy z Twojego konta
