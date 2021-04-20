@@ -20,15 +20,16 @@ contract TEXP is ERC20, ITEXP {
         return 1;
     }
 
-    function earnForHelping(
+    function gatherExpForLearning(
         address mentor,
-        uint256 amount,
-        address student
-    ) public payable override(ITEXP) returns (bool) {
+        address student,
+        uint256 amount
+    ) public override(ITEXP) returns (bool) {
         require(mentor != address(0), "ERC20: mentor address cannot be 0x0");
         require(mentor != address(0), "ERC20: mentor address cannot be 0x0");
 
         uint256 studentAmount = amount / 10;
+
         _mint(mentor, amount);
         _mint(student, studentAmount);
 
@@ -38,9 +39,8 @@ contract TEXP is ERC20, ITEXP {
         return true;
     }
 
-    function earnForPublishing(address mentor, uint256 amount)
+    function gatherExpForPublishing(address mentor, uint256 amount)
         public
-        payable
         override(ITEXP)
         returns (bool)
     {

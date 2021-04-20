@@ -8,27 +8,52 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
-import {Redistributable} from './Redistributable.sol';
+import {Redistributable} from "./Redistributable.sol";
 
-contract TCOIN is Redistributable {
 
-    uint256 private _totalSupply = 0;
-    uint256 private _burnedSupply = 0;
+contract TDCBalancesStore is Redistributable {
 
-    uint256 private _burnedMultiplier = 100;
-    uint256 private _rediscributionMultiplier = 50;
+    uint256 internal _totalSupply = 0;
 
-    uint256 private _teachingReward = 32 * 10 ** decimals();
-    uint256 private _initReward = 2 * 10 ** decimals();
-    uint256 private _maxSupply = 256 * 10**6 * 10**decimals();
+    uint256 internal _burnedSupply = 0;
 
-    mapping (address => mapping (address => uint256)) private _allowances;
+    uint256 internal _burnedMultiplier = 100;
+    uint256 internal _rediscributionMultiplier = 50;
 
-    constructor() Redistributable("TCoin", "TCOIN") {}
+    uint256 internal _teachingReward = 32 * 10 ** decimals();
+    uint256 internal _initReward = 2 * 10 ** decimals();
+    uint256 internal _maxSupply = 256 * 10**6 * 10 ** decimals();
 
-    function earnForLearning(address mentor, address student) public payable returns (bool) {
+    mapping (address => mapping (address => uint256)) internal _allowances;
+
+    constructor() 
+    Redistributable("TechDAOCoin", "TDC") 
+    public {}
+
+    function minted() public view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function burned() public view returns (uint256) {
+        return _burnedSupply;
+    }
+
+    function maxSupply() public view returns (uint256) {
+        return _maxSupply;
+    }
+}
+
+
+contract TCOIN is TDCBalancesStore {
+
+    constructor() TDCBalancesStore() {}
+
+    function earnForLearning(address mentor, address student, uint score) public returns (bool) {
+        // console.log("args", mentor, student, score);
         require(mentor != address(0), "ERC20: mentor address cannot be 0x0");
         require(student != address(0), "ERC20: confirmer address cannot be 0x0");
+        require(uint(score) >= 1, "ERC20: score cannot be negative");
+        require(uint(score) <= 10, "ERC20: score cannot be more then 10");
 
         bool mentorWasRecentlyAdded = _addToOwners(mentor);
         bool studentWasRecentlyAdded = _addToOwners(student);
@@ -51,26 +76,16 @@ contract TCOIN is Redistributable {
             _totalSupply += _initReward;
         }
 
-        if (_totalSupply + _teachingReward >= _maxSupply) {
+        if (_totalSupply + (score * _teachingReward / 10) >= _maxSupply) {
             return false;
         }
 
-        _mint(mentor, _teachingReward);
-        _totalSupply += _teachingReward;
+        _mint(mentor, (score * _teachingReward / 10));
+        _totalSupply += (score * _teachingReward / 10);
+        
         return true;
     }
 
-    function minted() public view returns (uint256) {
-        return _totalSupply;
-    }
-
-    function burned() public view returns (uint256) {
-        return _burnedSupply;
-    }
-
-    function maxSupply() public view returns (uint256) {
-        return _maxSupply;
-    }
 
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override(ERC20) returns (bool) {
         uint256 toBurn = amount / _burnedMultiplier;
@@ -103,6 +118,7 @@ contract TCOIN is Redistributable {
 
         return true;
     }
+
  
 }
 

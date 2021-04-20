@@ -126,7 +126,31 @@ async function main() {
         // console.log('wallet', wallet.address)
         // console.log('wallet2', wallet2.address)
 
-        // await coin.earnForLearning(deployer.address, another.address)
+        await jsCoin.gatherExpForLearning(deployer.address, wallet.address, 10)
+        await jsCoin.gatherExpForLearning(deployer.address, wallet.address, 10)
+        await jsCoin.gatherExpForLearning(deployer.address, wallet.address, 10)
+        await jsCoin.gatherExpForLearning(deployer.address, wallet.address, 10)
+
+        const balance0 = Number(await jsCoin.balanceOf(deployer.address))
+        console.log('deployer', balance0)
+
+        const balance = Number(await jsCoin.balanceOf(wallet.address))
+        console.log('wallet', balance)
+
+        await jsCoin.gatherExpForPublishing(deployer.address, 10)
+        await jsCoin.gatherExpForPublishing(deployer.address, 10)
+        await jsCoin.gatherExpForPublishing(deployer.address, 10)
+
+        const _balance0 = Number(await jsCoin.balanceOf(deployer.address))
+        console.log('deployer', _balance0)
+
+        const _balance = Number(await jsCoin.balanceOf(wallet.address))
+        console.log('wallet', _balance)
+
+        const supply = Number(await jsCoin.totalSupply())
+        console.log('supply', supply)
+
+
         // await coin.earnForLearning(deployer.address, another.address)
         // await coin.earnForLearning(deployer.address, another.address)
         // await coin.earnForLearning(deployer.address, another.address)

@@ -6,8 +6,6 @@ import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 // ma maxymalny limit - 1mld
 // można go burnować -> wrzucić na portfel 0x0
@@ -16,12 +14,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 // można wysłać jako ofertę za nauke
 // można wysłać jako płatność za rabat
 
-abstract contract Redistributable is ERC20 {
+abstract contract Redistributable is ERC20, Ownable {
     mapping(address => uint256) internal _balances;
     mapping(address => bool) internal _owners;
     address[] internal _addresses;
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) Ownable() {}
 
     function decimals() public view virtual override(ERC20) returns (uint8) {
         return 2;

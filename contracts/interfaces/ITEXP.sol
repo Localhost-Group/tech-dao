@@ -5,15 +5,14 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 interface ITEXP {
-    function earnForHelping(
+    function gatherExpForLearning(
         address mentor,
-        uint256 amount,
-        address student
-    ) external payable returns (bool);
+        address student,
+        uint256 amount
+    ) external returns (bool);
 
-    function earnForPublishing(address mentor, uint256 amount)
+    function gatherExpForPublishing(address mentor, uint256 amount)
         external
-        payable
         returns (bool);
 
     function isExpToken() external pure returns (bool);

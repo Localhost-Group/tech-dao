@@ -26,7 +26,7 @@ module.exports = {
     path: './shared/abi',
     clear: true,
     flat: true,
-    only: [':TCOIN$', ':TEXP$'],
+    only: [':TCOIN$', ':TEXP$', ':HelpOffers$'],
     spacing: 2
   },
   networks: {

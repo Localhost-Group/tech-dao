@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "ganache-cli -e 10 -a 10 -p 8545 > ./shared/logs.txt",
     "run-server": "concurrently \"npm run serve\" \"npm run migrate\"",
-    "deploy": "npx hardhat run scripts/initNetwork.js --network ropsten"
+    "deploy": "npx hardhat run scripts/deployToRopsten.js --network ropsten"
   },
   "author": "",
   "license": "ISC",
