@@ -1,0 +1,1 @@
+// co powienien robić kontrakt
